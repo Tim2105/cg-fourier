@@ -51,6 +51,7 @@ void Fourier1D::set_signal(const Signal &signal)
 
 //-----------------------------------------------------------------------------
 
+
 void Fourier1D::fourier_transform()
 {
     Signal &f_in = signal_;
@@ -59,6 +60,8 @@ void Fourier1D::fourier_transform()
     const int N = f_in.size();
     F_out.clear();
     F_out.resize(N, complex(0));
+
+    constexpr double PI = 3.141592654;
 
 #pragma omp parallel for
     for (int k = 0; k < N; ++k)
@@ -71,7 +74,16 @@ void Fourier1D::fourier_transform()
      * - A complex exponential-function `exp_i(double x)` is
      * implemented in helper.cpp.
      */
+        double kShifted = k - N / 2;
 
+        complex F_k(0);
+        for(int n = 0; n < N; n++) {
+            F_k += f_in[n] * exp_i(-2.0 * PI * (double)kShifted * (double)n / (double)N);
+        }
+
+        F_k /= (double)N;
+
+        F_out[k] = F_k;
     }
 
     // initialize filtered spectrum with spectrum (no filter)
@@ -93,16 +105,13 @@ void Fourier1D::inverse_fourier_transform()
 #pragma omp parallel for
     for (int i = 0; i < N; ++i)
     {
-        /**
-     * \todo Implement the inverse discrete fourier transformation from `F_in`
-     * to `f_out`. Note that `f_out` stores real numbers.
-     *
-     * Hints:
-     * - The real component of a complex number z can be accessed with z.real().
-     * - A complex exponential-function `exp_i(double x)` is implemented in
-     * helper.cpp.
-     */
+        complex f_k(0.0);
 
+        for(int k = -N/2; k <= N/2; k++) {
+            f_k += F_in[k] * exp_i(2.0 * 3.141592654 * (double)i / (double)N);
+        }
+
+        f_out[i] = f_k.real();
     }
 }
 
@@ -130,10 +139,16 @@ float Fourier1D::frequency_filter(int frequency_k, bool filter_above)
    * i.e. abs(F(w)) = abs(F(-w)).
    */
 
+  filter_above = !filter_above;
+
+  for(int i = 0; i < F_in.size() / 2; i++) {
+    
+  }
+
 
     compute_spectrum_y(true);
 
-    return percetage_filtered;
+    return percetage_filtered / F_in.size();
 }
 
 //-----------------------------------------------------------------------------
