@@ -66,14 +66,6 @@ void Fourier1D::fourier_transform()
 #pragma omp parallel for
     for (int k = 0; k < N; ++k)
     {
-        /**
-     * \todo Implement the discrete fourier transformation
-     * from `f_in` to `F_out`.
-     *
-     * Hints:
-     * - A complex exponential-function `exp_i(double x)` is
-     * implemented in helper.cpp.
-     */
         double kShifted = k - N / 2;
 
         complex F_k(0);
@@ -126,29 +118,24 @@ float Fourier1D::frequency_filter(int frequency_k, bool filter_above)
     const int N = F_in.size();
     F_out = F_in;
 
-    /**
-   * \todo Depending on `filter_above`, implement:
-   * 1. (false-case) a low-pass filter, that filters (sets to zero) all
-   * frequencies above `frequency_k`
-   * 2. (true-case) a high-pass filter, that filters (sets to zero) all
-   * frequencies below `frequency_k` In either case, store the filtered version
-   * of `F_in` in `F_out`.
-   * 3. Return the percentage of values, that you set to zero.
-   *
-   * Note that the absolute spectrum has to be symmetrical,
-   * i.e. abs(F(w)) = abs(F(-w)).
-   */
-
-  filter_above = !filter_above;
-
-  for(int i = 0; i < F_in.size() / 2; i++) {
-    
+  if(filter_above) {
+    for(int i = frequency_k + 1; i < F_out.size() / 2; i++) {
+        F_out[F_out.size() / 2 - i] = 0;
+        F_out[i + F_out.size() / 2] = 0;
+        percetage_filtered += 2.0;
+    }
+  } else {
+    for(int i = 0; i < frequency_k; i++) {
+        F_out[F_out.size() / 2 - i] = 0;
+        F_out[i + F_out.size() / 2] = 0;
+        percetage_filtered += 2.0;
+    }
   }
 
 
     compute_spectrum_y(true);
 
-    return percetage_filtered / F_in.size();
+    return percetage_filtered / F_out.size();
 }
 
 //-----------------------------------------------------------------------------
@@ -162,23 +149,26 @@ float Fourier1D::frequency_value_filter(double Fk, bool filter_above)
     const int N = F_in.size();
     F_out = F_in;
 
-    /**
-   * \todo Depending on `filter_above`, implement:
-   * 1. (false-case) filter (set to zero) spectrum values which have an absolute
-   * value greater than `Fk`.
-   * 2. (true-case) Filter (set to zero) spectrum values which have an absolute
-   * value smaller than `Fk`. In either case, store the filtered version of
-   * `F_in` in `F_out`.
-   * 3. Return the percentage of values, that you set to zero.
-   *
-   * Note that the absolute spectrum has to be symmetrical,
-   * i.e. abs(F(w)) = abs(F(-w)).
-   */
+  if(filter_above) {
+    for(int i = 0; i < F_out.size(); i++) {
+        if(std::abs(F_out[i]) > Fk) {
+            F_out[i] = 0;
+            percetage_filtered += 1.0;
+        }
+    }
+  } else {
+    for(int i = 0; i < F_out.size(); i++) {
+        if(std::abs(F_out[i]) < Fk) {
+            F_out[i] = 0;
+            percetage_filtered += 1.0;
+        }
+    }
+  }
 
 
     compute_spectrum_y(true);
 
-    return percetage_filtered;
+    return percetage_filtered / F_out.size();
 }
 
 //-----------------------------------------------------------------------------
